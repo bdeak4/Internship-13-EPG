@@ -19,7 +19,7 @@ function getProgram(channelId, datetime, offset) {
     .sort((a, b) => a.start > b.start);
 
   const selectedProgramIndex = sortedChannelPrograms.findIndex(
-    (p) => p.start < datetime && p.end > datetime
+    (p) => p.start <= datetime && p.end > datetime
   );
   const programIndex = selectedProgramIndex + offset;
 

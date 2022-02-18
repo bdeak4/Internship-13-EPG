@@ -25,4 +25,16 @@ function formatProgram(program, selected) {
   return `${time}\t${program.id}\t${title} ${rerun} ${selection}`;
 }
 
-export { formatString, formatTime, formatProgram };
+function convertTimeToMs(amount, format) {
+  switch (format) {
+    case "d":
+      return amount * 24 * 60 * 60 * 1000;
+    case "h":
+      return amount * 60 * 60 * 1000;
+    case "m":
+      return amount * 60 * 1000;
+  }
+  return 0;
+}
+
+export { formatString, formatTime, formatProgram, convertTimeToMs };

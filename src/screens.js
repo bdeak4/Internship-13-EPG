@@ -1,5 +1,5 @@
 import { getSchedule } from "./schedule.js";
-import { formatProgram } from "./utility.js";
+import { formatProgram, convertTimeToMs } from "./utility.js";
 
 function chooseTimeScreen(error) {
   const customTime = prompt(`Dobro došli u TV vodič
@@ -47,8 +47,26 @@ o 22\t\tpogledaj opis programa 22
 f 22\t\tdodaj program 22 u favorite
 f\t\tpregledaj favorite
 r 22\t\tocijeni program 22
-q\t\tizlazak iz programa
 `);
+
+  if (command === null) {
+    alert("Izlaz iz programa");
+    return;
+  }
+
+  const moveTime = command.match(/(\+|-)(\d+)(m|h|d)/);
+  if (moveTime !== null) {
+    const [, operator, timeAmount, timeFormat] = moveTime;
+
+    let timeDifference = convertTimeToMs(parseInt(timeAmount), timeFormat);
+
+    if (operator === "-") {
+      timeDifference *= -1;
+    }
+
+    window.time.setTime(window.time.getTime() + timeDifference);
+    return scheduleScreen();
+  }
 }
 
 export { chooseTimeScreen };
