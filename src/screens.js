@@ -1,4 +1,10 @@
-import { getSchedule } from "./schedule.js";
+import {
+  hasPin,
+  isCorrectPin,
+  pinPrompt,
+  setPin,
+} from "./parental_protection.js";
+import { getProgramById, getSchedule } from "./schedule.js";
 import { formatProgram, convertTimeToMs } from "./utility.js";
 
 function chooseTimeScreen(error) {
@@ -7,6 +13,11 @@ Upišite vrijeme ako dolazite iz budučnosti ili ostavite prazno za trenutno vri
 Hint: "2022-02-19 13:00"
 
 ${error ? error : ""}`);
+
+  if (customTime === null) {
+    alert("Izlaz iz programa");
+    return;
+  }
 
   if (customTime !== "") {
     const newTime = new Date(customTime);
@@ -18,11 +29,22 @@ ${error ? error : ""}`);
     }
   }
 
+  if (!hasPin()) {
+    const pin = pinPrompt("molimo postavite pin za roditeljsku zaštitu");
+    if (pin !== null) {
+      setPin(pin);
+    }
+  }
+
   return scheduleScreen();
 }
 
 function scheduleScreen() {
   const formatPrograms = (programs) => {
+    if (programs[0] === null && programs[1] === null && programs[2] === null) {
+      return "prekid programa";
+    }
+
     return programs.map((p, i) => formatProgram(p, i === 1)).join("\n");
   };
 
@@ -47,6 +69,7 @@ o 22\t\tpogledaj opis programa 22
 f 22\t\tdodaj program 22 u favorite
 f\t\tpregledaj favorite
 r 22\t\tocijeni program 22
+pp\t\tpromjeni roditeljski pin
 `);
 
   if (command === null) {
@@ -67,6 +90,36 @@ r 22\t\tocijeni program 22
     window.time.setTime(window.time.getTime() + timeDifference);
     return scheduleScreen();
   }
+
+  const programDescription = command.match(/o[^\d]*(\d+)/);
+  if (programDescription !== null) {
+    const [, id] = programDescription;
+    return programDescriptionScreen(parseInt(id));
+  }
+}
+
+function programDescriptionScreen(id) {
+  const program = getProgramById(id);
+
+  if (program.category === "odrasli program") {
+    const message = "molimo upišite pin za roditeljsku zaštitu";
+    const error = "pin nije točan";
+
+    let pin = pinPrompt(message);
+    while (pin !== null && !isCorrectPin(pin)) {
+      pin = pinPrompt(message + "\n\n" + error);
+    }
+
+    if (pin === null) {
+      return scheduleScreen();
+    }
+  }
+
+  alert(`${formatProgram(program, false)}
+
+${program.description || "program nema opis"}
+`);
+  return scheduleScreen();
 }
 
 export { chooseTimeScreen };

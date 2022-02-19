@@ -34,4 +34,8 @@ function getProgram(channelId, datetime, offset) {
   return sortedChannelPrograms[programIndex];
 }
 
-export { getSchedule, getProgram };
+function getProgramById(id) {
+  return programs.find((p) => p.id === id);
+}
+
+export { getSchedule, getProgramById };
