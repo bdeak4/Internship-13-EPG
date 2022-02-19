@@ -30,4 +30,12 @@ function pinPrompt(message) {
   return pin;
 }
 
-export { hasPin, isCorrectPin, setPin, pinPrompt };
+function pinPromptWithAuth(message) {
+  let pin = pinPrompt(message);
+  while (pin !== null && !isCorrectPin(pin)) {
+    pin = pinPrompt(message + "\n\npin nije točan");
+  }
+  return pin;
+}
+
+export { hasPin, setPin, pinPrompt, pinPromptWithAuth };

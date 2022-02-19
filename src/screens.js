@@ -1,7 +1,7 @@
 import {
   hasPin,
-  isCorrectPin,
   pinPrompt,
+  pinPromptWithAuth,
   setPin,
 } from "./parental_protection.js";
 import { getProgramById, getSchedule } from "./schedule.js";
@@ -39,7 +39,7 @@ ${error ? error : ""}`);
   return scheduleScreen();
 }
 
-function scheduleScreen() {
+function scheduleScreen(error) {
   const formatPrograms = (programs) => {
     if (programs[0] === null && programs[1] === null && programs[2] === null) {
       return "prekid programa";
@@ -70,7 +70,8 @@ f 22\t\tdodaj program 22 u favorite
 f\t\tpregledaj favorite
 r 22\t\tocijeni program 22
 pp\t\tpromjeni roditeljski pin
-`);
+
+${error ? error : ""}`);
 
   if (command === null) {
     alert("Izlaz iz programa");
@@ -96,19 +97,17 @@ pp\t\tpromjeni roditeljski pin
     const [, id] = programDescription;
     return programDescriptionScreen(parseInt(id));
   }
+
+  if (command === "pp") {
+    return changePinScreen();
+  }
 }
 
 function programDescriptionScreen(id) {
   const program = getProgramById(id);
 
   if (program.category === "odrasli program") {
-    const message = "molimo upišite pin za roditeljsku zaštitu";
-    const error = "pin nije točan";
-
-    let pin = pinPrompt(message);
-    while (pin !== null && !isCorrectPin(pin)) {
-      pin = pinPrompt(message + "\n\n" + error);
-    }
+    const pin = pinPromptWithAuth("molimo upišite pin za roditeljsku zaštitu");
 
     if (pin === null) {
       return scheduleScreen();
@@ -119,6 +118,24 @@ function programDescriptionScreen(id) {
 
 ${program.description || "program nema opis"}
 `);
+  return scheduleScreen();
+}
+
+function changePinScreen() {
+  const pin = pinPromptWithAuth(
+    "molimo upišite postojeći pin za roditeljsku zaštitu"
+  );
+
+  if (pin === null) {
+    return scheduleScreen();
+  }
+
+  const newPin = pinPrompt("molimo upišite novi pin za roditeljsku zaštitu");
+
+  if (newPin !== null) {
+    setPin(newPin);
+  }
+
   return scheduleScreen();
 }
 
