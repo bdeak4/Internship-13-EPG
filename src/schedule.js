@@ -35,7 +35,7 @@ function getProgram(channelId, datetime, offset) {
 }
 
 function getProgramById(id) {
-  return programs.find((p) => p.id === id);
+  return programs.find((p) => p.id === id) || null;
 }
 
 export { getSchedule, getProgramById };

@@ -4,6 +4,7 @@ import {
   pinPromptWithAuth,
   setPin,
 } from "./parental_protection.js";
+import { printStars, rateProgram } from "./rating.js";
 import { getProgramById, getSchedule } from "./schedule.js";
 import { formatProgram, convertTimeToMs } from "./utility.js";
 
@@ -78,9 +79,9 @@ ${error ? error : ""}`);
     return;
   }
 
-  const moveTime = command.match(/(\+|-)(\d+)(m|h|d)/);
-  if (moveTime !== null) {
-    const [, operator, timeAmount, timeFormat] = moveTime;
+  const moveTimeMatch = command.match(/(\+|-)(\d+)(m|h|d)/);
+  if (moveTimeMatch !== null) {
+    const [, operator, timeAmount, timeFormat] = moveTimeMatch;
 
     let timeDifference = convertTimeToMs(parseInt(timeAmount), timeFormat);
 
@@ -92,19 +93,32 @@ ${error ? error : ""}`);
     return scheduleScreen();
   }
 
-  const programDescription = command.match(/o[^\d]*(\d+)/);
-  if (programDescription !== null) {
-    const [, id] = programDescription;
+  const programDescriptionMatch = command.match(/o[^\d]*(\d+)/);
+  if (programDescriptionMatch !== null) {
+    const [, id] = programDescriptionMatch;
     return programDescriptionScreen(parseInt(id));
+  }
+
+  const rateProgramMatch = command.match(/r[^\d]*(\d+)/);
+  if (rateProgramMatch !== null) {
+    const [, id] = rateProgramMatch;
+    return rateProgramScreen(parseInt(id));
   }
 
   if (command === "pp") {
     return changePinScreen();
   }
+
+  return scheduleScreen(`naredba "${command}" ne postoji`);
 }
 
 function programDescriptionScreen(id) {
   const program = getProgramById(id);
+
+  if (program === null) {
+    alert("program ne postoji");
+    return scheduleScreen();
+  }
 
   if (program.category === "odrasli program") {
     const pin = pinPromptWithAuth("molimo upišite pin za roditeljsku zaštitu");
@@ -116,8 +130,41 @@ function programDescriptionScreen(id) {
 
   alert(`${formatProgram(program, false)}
 
+${printStars(program.id)}
+
 ${program.description || "program nema opis"}
 `);
+  return scheduleScreen();
+}
+
+function rateProgramScreen(id) {
+  const program = getProgramById(id);
+
+  if (program === null) {
+    alert("program ne postoji");
+    return scheduleScreen();
+  }
+
+  if (program.category === "odrasli program") {
+    const pin = pinPromptWithAuth("molimo upišite pin za roditeljsku zaštitu");
+
+    if (pin === null) {
+      return scheduleScreen();
+    }
+  }
+
+  const message = "ocijeni program";
+  const error = "ocjena mora biti između 1 i 5";
+
+  let rating = parseInt(prompt(message));
+  while (rating < 1 || rating > 5 || isNaN(rating)) {
+    rating = parseInt(prompt(message + "\n\n" + error));
+  }
+
+  rateProgram(id, rating);
+
+  alert("Program uspješno ocijenjen");
+
   return scheduleScreen();
 }
 
