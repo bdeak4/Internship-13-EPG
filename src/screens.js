@@ -1,4 +1,9 @@
 import {
+  addProgramToFavourites,
+  listFavouritePrograms,
+  removeProgramFromFavourites,
+} from "./favourites.js";
+import {
   hasPin,
   pinPrompt,
   pinPromptWithAuth,
@@ -10,7 +15,7 @@ import { formatProgram, convertTimeToMs } from "./utility.js";
 
 function chooseTimeScreen(error) {
   const customTime = prompt(`Dobro došli u TV vodič
-Upišite vrijeme ako dolazite iz budučnosti ili ostavite prazno za trenutno vrijeme.
+Upišite vrijeme ako dolazite iz budućnosti ili ostavite prazno za trenutno vrijeme.
 Hint: "2022-02-19 13:00"
 
 ${error ? error : ""}`);
@@ -68,6 +73,7 @@ ${schedule}
 \t\t(radi i za sate (h) i dane (d))
 o 22\t\tpogledaj opis programa 22
 f 22\t\tdodaj program 22 u favorite
+rf 22\tizbrisi program 22 iz favorita
 f\t\tpregledaj favorite
 r 22\t\tocijeni program 22
 pp\t\tpromjeni roditeljski pin
@@ -79,7 +85,7 @@ ${error ? error : ""}`);
     return;
   }
 
-  const moveTimeMatch = command.match(/(\+|-)(\d+)(m|h|d)/);
+  const moveTimeMatch = command.match(/^(\+|-)(\d+)(m|h|d)$/);
   if (moveTimeMatch !== null) {
     const [, operator, timeAmount, timeFormat] = moveTimeMatch;
 
@@ -93,13 +99,29 @@ ${error ? error : ""}`);
     return scheduleScreen();
   }
 
-  const programDescriptionMatch = command.match(/o[^\d]*(\d+)/);
+  const programDescriptionMatch = command.match(/^o[^\d]*(\d+)$/);
   if (programDescriptionMatch !== null) {
     const [, id] = programDescriptionMatch;
     return programDescriptionScreen(parseInt(id));
   }
 
-  const rateProgramMatch = command.match(/r[^\d]*(\d+)/);
+  const addProgramToFavouritesMatch = command.match(/^f[^\d]*(\d+)$/);
+  if (addProgramToFavouritesMatch !== null) {
+    const [, id] = addProgramToFavouritesMatch;
+    return addProgramToFavouritesScreen(parseInt(id));
+  }
+
+  const removeProgramFromFavouritesMatch = command.match(/^rf[^\d]*(\d+)$/);
+  if (removeProgramFromFavouritesMatch !== null) {
+    const [, id] = removeProgramFromFavouritesMatch;
+    return removeProgramFromFavouritesScreen(parseInt(id));
+  }
+
+  if (command === "f") {
+    return listFavouriteProgramsScreen();
+  }
+
+  const rateProgramMatch = command.match(/^r[^\d]*(\d+)$/);
   if (rateProgramMatch !== null) {
     const [, id] = rateProgramMatch;
     return rateProgramScreen(parseInt(id));
@@ -137,6 +159,43 @@ ${program.description || "program nema opis"}
   return scheduleScreen();
 }
 
+function addProgramToFavouritesScreen(id) {
+  if (getProgramById(id) === null) {
+    alert("program ne postoji");
+    return scheduleScreen();
+  }
+
+  addProgramToFavourites(id);
+
+  alert("program uspješno dodan u favorite");
+
+  return scheduleScreen();
+}
+
+function removeProgramFromFavouritesScreen(id) {
+  if (getProgramById(id) === null) {
+    alert("program ne postoji");
+    return scheduleScreen();
+  }
+
+  removeProgramFromFavourites(id);
+
+  alert("program uspješno izbrisan iz favorita");
+
+  return scheduleScreen();
+}
+
+function listFavouriteProgramsScreen() {
+  const favourites = listFavouritePrograms()
+    .map((p) => formatProgram(p, p.start < window.time))
+    .join("\n");
+  alert(`Favoriti
+
+${favourites.length ? favourites : "nema favorita"}`);
+
+  return scheduleScreen();
+}
+
 function rateProgramScreen(id) {
   const program = getProgramById(id);
 
@@ -153,7 +212,7 @@ function rateProgramScreen(id) {
     }
   }
 
-  const message = "ocijeni program";
+  const message = "ocijeni program (1-5)";
   const error = "ocjena mora biti između 1 i 5";
 
   let rating = parseInt(prompt(message));
